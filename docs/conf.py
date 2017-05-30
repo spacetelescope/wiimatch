@@ -338,8 +338,8 @@ latex_domain_indices = True
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'packagename', u'Packagename Documentation',
-     [u'packagename'], 1)
+    ('index', 'wiimatch', u'wiimatch Documentation',
+     [u'Mihai Cara'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -352,8 +352,8 @@ man_show_urls = True
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'packagename', u'Packagename Documentation',
-   u'packagename', 'packagename', 'Packagname',
+  ('index', 'wiimatch.tex', u'wiimatch Documentation',
+   u'Mihai Cara', 'index', 'wiimatch Documentation',
    'Miscellaneous'),
 ]
 
