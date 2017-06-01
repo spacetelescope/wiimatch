@@ -12,5 +12,7 @@ __author__ = 'Mihai Cara'
 
 
 from .version import *
-from . import match
 
+from . import match
+from . import lsq_optimizer
+from . import utils
