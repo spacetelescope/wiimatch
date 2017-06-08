@@ -22,7 +22,7 @@ __all__ = ['build_lsq_eqs', 'lsq_solve']
 
 
 def build_lsq_eqs(images, masks, sigmas, degree, center=None,
-                  image2world=None):
+                  image2world=None, center_cs='image'):
     """
     Build system of linear equations whose solution would provide image
     intensity matching in the least squares sense.
@@ -50,18 +50,26 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
         ``images``. The length of the input list must match the dimensionality
         of the input images.
 
-    center : iterable, None
+    center : iterable, None, optional
         An iterable of length equal to the number of dimensions in
-        ``images`` data arrays that indicates the center of the coordinate
-        system in **image** coordinates. When ``center`` is `None` then
-        ``center`` is set to the middle of the "image" as
-        ``center[i]=image_shape[i]//2``. If ``image2world`` is not `None`,
-        then center will first be converted to world coordinates.
+        ``image_shape`` that indicates the center of the coordinate system
+        in **image** coordinates when ``center_cs`` is ``'image'`` otherwise
+        center is assumed to be in **world** coordinates (when ``center_cs``
+        is ``'world'``). When ``center`` is `None` then ``center`` is
+        set to the middle of the "image" as ``center[i]=image_shape[i]//2``.
+        If ``image2world`` is not `None` and ``center_cs`` is ``'image'``,
+        then supplied center will be converted to world coordinates.
 
-    image2world : function, None
+    image2world : function, None, optional
         Image-to-world coordinates transformation function. This function
         must be of the form ``f(x,y,z,...)`` and accept a number of arguments
         `numpy.ndarray` arguments equal to the dimensionality of images.
+
+    center_cs : {'image', 'world'}, optional
+        Indicates whether ``center`` is in image coordinates or in world
+        coordinates. This parameter is ignored when ``center`` is set to
+        `None`: it is assumed to be `False`. ``center_cs`` *cannot be*
+        ``'world'`` when ``image2world`` is `None` unless ``center`` is `None`.
 
     Returns
     -------
@@ -184,8 +192,12 @@ c_{1,0,\\ldots}^2,\\ldots).
     gshape = (nimages,) + degree1
 
     # pre-compute coordinate arrays:
-    coord_arrays = create_coordinate_arrays(images[0].shape, center=center,
-                                            image2world=image2world)
+    coord_arrays = create_coordinate_arrays(
+        images[0].shape,
+        center=center,
+        image2world=image2world,
+        center_cs=center_cs
+    )
 
     # allocate array for the coefficients of the system of equations (a*x=b):
     a = np.zeros((sys_eq_array_size, sys_eq_array_size), dtype=np.float)
@@ -270,7 +282,7 @@ def lsq_solve(matrix, free_term, nimages=None):
     free_term : numpy.ndarray
         A 1D array containing free terms of the system of the equations.
 
-    nimages : int, None
+    nimages : int, None, optional
         Number of images for which the system is being solved.
 
     Returns
