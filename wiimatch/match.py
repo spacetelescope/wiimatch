@@ -24,7 +24,7 @@ __all__ = ['match_lsq']
 
 
 def match_lsq(images, masks=None, sigmas=None, degree=0,
-              center=None, image2world=None):
+              center=None, image2world=None, center_cs='image'):
     """
     Compute coefficients of (multivariate) polynomials that once subtracted
     from input images would provide image intensity matching in the least
@@ -57,20 +57,26 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
         assumed that the polynomial degree in each dimension is equal to
         that integer.
 
-    center : iterable, int, None
+    center : iterable, None, optional
         An iterable of length equal to the number of dimensions in
-        ``images`` data arrays that indicates the center of the coordinate
-        system in **image** coordinates. When a single integer number is
-        provided, it is assumed that the the center along each dimension
-        is equal to that integer. When ``center`` is `None` then
-        ``center`` is set to the middle of the "image" as
-        ``center[i]=image_shape[i]//2``. If ``image2world`` is not `None`,
-        then center will first be converted to world coordinates.
+        ``image_shape`` that indicates the center of the coordinate system
+        in **image** coordinates when ``center_cs`` is ``'image'`` otherwise
+        center is assumed to be in **world** coordinates (when ``center_cs``
+        is ``'world'``). When ``center`` is `None` then ``center`` is
+        set to the middle of the "image" as ``center[i]=image_shape[i]//2``.
+        If ``image2world`` is not `None` and ``center_cs`` is ``'image'``,
+        then supplied center will be converted to world coordinates.
 
-    image2world : function, None
+    image2world : function, None, optional
         Image-to-world coordinates transformation function. This function
         must be of the form ``f(x,y,z,...)`` and accept a number of arguments
         `numpy.ndarray` arguments equal to the dimensionality of images.
+
+    center_cs : {'image', 'world'}, optional
+        Indicates whether ``center`` is in image coordinates or in world
+        coordinates. This parameter is ignored when ``center`` is set to
+        `None`: it is assumed to be `False`. ``center_cs`` *cannot be*
+        ``'world'`` when ``image2world`` is `None` unless ``center`` is `None`.
 
     Returns
     -------
@@ -210,7 +216,8 @@ array([[ -6.60000000e-01,  -7.50000000e-02,  -3.10000000e-01,
 
     # build the system of equations:
     mat, free_col = build_lsq_eqs(images, masks, sigmas, degree,
-                                  center=center, image2world=image2world)
+                                  center=center, image2world=image2world,
+                                  center_cs=center_cs)
 
     # solve the system:
     bkg_poly_coef = lsq_solve(mat, free_col, nimages)

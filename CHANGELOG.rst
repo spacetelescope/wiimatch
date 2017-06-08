@@ -9,7 +9,8 @@ Added
 ^^^^^
 
 - ``center_cs`` parameter to :py:func:`wiimatch.utils.create_coordinate_arrays`
-  and :py:func:`wiimatch.lsq_optimizer.build_lsq_eqs` in order to allow
+  :py:func:`wiimatch.utils.match_lsq` and
+  :py:func:`wiimatch.lsq_optimizer.build_lsq_eqs` in order to allow
   specification of the coordinate system of the center
   (``'image'`` or ``'world'``) when it is explicitly set.
 
