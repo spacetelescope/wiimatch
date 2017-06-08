@@ -6,8 +6,8 @@ import os
 
 
 __docformat__ = 'restructuredtext en'
-__version__ = '0.1.0'
-__version_date__ = '09-May-2017'
+__version__ = '0.1.1'
+__version_date__ = '08-June-2017'
 __author__ = 'Mihai Cara'
 
 

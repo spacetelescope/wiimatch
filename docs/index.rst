@@ -15,6 +15,16 @@ Content
    LICENSE.rst
 
 
+Development Notes
+=================
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   CHANGELOG.rst
+
+
 Indices and tables
 ==================
 
