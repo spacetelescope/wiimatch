@@ -24,7 +24,8 @@ __all__ = ['match_lsq']
 
 
 def match_lsq(images, masks=None, sigmas=None, degree=0,
-              center=None, image2world=None, center_cs='image'):
+              center=None, image2world=None, center_cs='image',
+              ext_return=False):
     """
     Compute coefficients of (multivariate) polynomials that once subtracted
     from input images would provide image intensity matching in the least
@@ -78,6 +79,12 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
         `None`: it is assumed to be `False`. ``center_cs`` *cannot be*
         ``'world'`` when ``image2world`` is `None` unless ``center`` is `None`.
 
+    ext_return : bool, optional
+        Indicates whether this function should return additional values besides
+        optimal polynomial coefficients (see ``bkg_poly_coeff`` return value
+        below) that match image intensities in the LSQ sense. See **Returns**
+        section for more details.
+
     Returns
     -------
     bkg_poly_coeff : numpy.ndarray
@@ -87,6 +94,28 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
         When ``nimages`` is **not** `None`, this function returns a 2D
         `numpy.ndarray` that holds the solution (polynomial coefficients)
         to the system. The solution is grouped by image.
+
+    a : numpy.ndarray
+        A 2D `numpy.ndarray` that holds the coefficients of the linear system
+        of equations. This value is returned only when ``ext_return``
+        is `True`.
+
+    b : numpy.ndarray
+        A 1D `numpy.ndarray` that holds the free terms of the linear system of
+        equations. This value is returned only when ``ext_return`` is `True`.
+
+    coord_arrays : list
+        A list of `numpy.ndarray` coordinate arrays each of ``image_shape``
+        shape. This value is returned only when ``ext_return`` is `True`.
+
+    eff_center : tuple
+        A tuple of coordinates of the effective center as used in generating
+        coordinate arrays. This value is returned only when ``ext_return``
+        is `True`.
+
+    coord_system : {'image', 'world'}
+        Coordinate system of the coordinate arrays and returned ``center``
+        value. This value is returned only when ``ext_return`` is `True`.
 
     Notes
     -----
@@ -215,10 +244,20 @@ array([[ -6.60000000e-01,  -7.50000000e-02,  -3.10000000e-01,
         center = tuple([center for i in range(ndim)])
 
     # build the system of equations:
-    mat, free_col = build_lsq_eqs(images, masks, sigmas, degree,
-                                  center=center, image2world=image2world,
-                                  center_cs=center_cs)
+    a, b, coord_arrays, eff_center, coord_system = build_lsq_eqs(
+        images,
+        masks,
+        sigmas,
+        degree,
+        center=center,
+        image2world=image2world,
+        center_cs=center_cs
+    )
 
     # solve the system:
-    bkg_poly_coef = lsq_solve(mat, free_col, nimages)
-    return bkg_poly_coef
+    bkg_poly_coef = lsq_solve(a, b, nimages)
+
+    if ext_return:
+        return bkg_poly_coef, a, b, coord_arrays, eff_center, coord_system
+    else:
+        return bkg_poly_coef
