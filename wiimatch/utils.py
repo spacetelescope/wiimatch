@@ -56,55 +56,63 @@ def create_coordinate_arrays(image_shape, center=None, image2world=None,
         A list of `numpy.ndarray` coordinate arrays each of ``image_shape``
         shape.
 
+    eff_center : tuple
+        A tuple of coordinates of the effective center as used in generating
+        coordinate arrays.
+
+    coord_system : {'image', 'world'}
+        Coordinate system of the coordinate arrays and returned ``center``
+        value.
+
     Examples
     --------
-    >>> import wiimatch
-    >>> wiimatch.utils.create_coordinate_arrays((3,5,4))
-    (array([[[-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.]],
-            [[-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.]],
-            [[-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.],
-             [-1.,  0.,  1.,  2.]]]),
-     array([[[-2., -2., -2., -2.],
-             [-1., -1., -1., -1.],
-             [ 0.,  0.,  0.,  0.],
-             [ 1.,  1.,  1.,  1.],
-             [ 2.,  2.,  2.,  2.]],
-            [[-2., -2., -2., -2.],
-             [-1., -1., -1., -1.],
-             [ 0.,  0.,  0.,  0.],
-             [ 1.,  1.,  1.,  1.],
-             [ 2.,  2.,  2.,  2.]],
-            [[-2., -2., -2., -2.],
-             [-1., -1., -1., -1.],
-             [ 0.,  0.,  0.,  0.],
-             [ 1.,  1.,  1.,  1.],
-             [ 2.,  2.,  2.,  2.]]]),
-     array([[[-2., -2., -2., -2.],
-             [-2., -2., -2., -2.],
-             [-2., -2., -2., -2.],
-             [-2., -2., -2., -2.],
-             [-2., -2., -2., -2.]],
-            [[-1., -1., -1., -1.],
-             [-1., -1., -1., -1.],
-             [-1., -1., -1., -1.],
-             [-1., -1., -1., -1.],
-             [-1., -1., -1., -1.]],
-            [[ 0.,  0.,  0.,  0.],
-             [ 0.,  0.,  0.,  0.],
-             [ 0.,  0.,  0.,  0.],
-             [ 0.,  0.,  0.,  0.],
-             [ 0.,  0.,  0.,  0.]]]))
+>>> import wiimatch
+>>> wiimatch.utils.create_coordinate_arrays((3,5,4))
+((array([[[-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.]],
+         [[-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.]],
+         [[-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.],
+          [-1.,  0.,  1.,  2.]]]),
+  array([[[-2., -2., -2., -2.],
+          [-1., -1., -1., -1.],
+          [ 0.,  0.,  0.,  0.],
+          [ 1.,  1.,  1.,  1.],
+          [ 2.,  2.,  2.,  2.]],
+         [[-2., -2., -2., -2.],
+          [-1., -1., -1., -1.],
+          [ 0.,  0.,  0.,  0.],
+          [ 1.,  1.,  1.,  1.],
+          [ 2.,  2.,  2.,  2.]],
+         [[-2., -2., -2., -2.],
+          [-1., -1., -1., -1.],
+          [ 0.,  0.,  0.,  0.],
+          [ 1.,  1.,  1.,  1.],
+          [ 2.,  2.,  2.,  2.]]]),
+  array([[[-2., -2., -2., -2.],
+          [-2., -2., -2., -2.],
+          [-2., -2., -2., -2.],
+          [-2., -2., -2., -2.],
+          [-2., -2., -2., -2.]],
+         [[-1., -1., -1., -1.],
+          [-1., -1., -1., -1.],
+          [-1., -1., -1., -1.],
+          [-1., -1., -1., -1.],
+          [-1., -1., -1., -1.]],
+         [[ 0.,  0.,  0.,  0.],
+          [ 0.,  0.,  0.,  0.],
+          [ 0.,  0.,  0.,  0.],
+          [ 0.,  0.,  0.,  0.],
+          [ 0.,  0.,  0.,  0.]]])), (1.0, 2.0, 2.0), u'image')
 
     """
     if center_cs not in ['image', 'world']:
@@ -127,16 +135,22 @@ def create_coordinate_arrays(image_shape, center=None, image2world=None,
 
     ind = np.indices(image_shape, dtype=np.float)[::-1]
 
-    if image2world is not None:
+    if image2world is None:
+        coord_system = 'image'
+        eff_center = tuple([c for c in center])
+
+    else:
         if center_cs == 'world':
-            center = tuple(map(float, center))
+            eff_center = tuple(map(float, center))
+
         else:
             # convert image's center from image to world coordinates:
-            center = tuple(map(float, image2world(*center)))
+            eff_center = tuple(map(float, image2world(*center)))
 
         # convert pixel indices to world coordinates:
         ind = image2world(*ind)
+        coord_system = 'world'
 
-    coord_arrays = tuple([i - c for (i, c) in zip(ind, center)])
+    coord_arrays = tuple([i - c for (i, c) in zip(ind, eff_center)])
 
-    return coord_arrays
+    return coord_arrays, eff_center, coord_system

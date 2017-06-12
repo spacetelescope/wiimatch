@@ -81,6 +81,18 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
         A 1D `numpy.ndarray` that holds the free terms of the linear system of
         equations.
 
+    coord_arrays : list
+        A list of `numpy.ndarray` coordinate arrays each of ``image_shape``
+        shape.
+
+    eff_center : tuple
+        A tuple of coordinates of the effective center as used in generating
+        coordinate arrays.
+
+    coord_system : {'image', 'world'}
+        Coordinate system of the coordinate arrays and returned ``center``
+        value.
+
     Notes
     -----
     :py:func:`build_lsq_eqs` builds a system of linear equations
@@ -126,8 +138,8 @@ c_{1,0,\\ldots}^2,\\ldots).
 >>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
 >>> mask = np.ones_like(im1, dtype=np.int8)
 >>> sigma = np.ones_like(im1, dtype=np.float)
->>> a, b = wiimatch.lsq_optimizer.build_lsq_eqs([im1, im3], [mask, mask],
-... [sigma, sigma], degree=(1,1,1), center=(0,0,0))
+>>> a, b, ca, ef, cs = wiimatch.lsq_optimizer.build_lsq_eqs([im1, im3],
+... [mask, mask], [sigma, sigma], degree=(1,1,1), center=(0,0,0))
 >>> print(a)
 [[   50.   100.   100.   200.    75.   150.   150.   300.   -50.  -100.
    -100.  -200.   -75.  -150.  -150.  -300.]
@@ -192,7 +204,7 @@ c_{1,0,\\ldots}^2,\\ldots).
     gshape = (nimages,) + degree1
 
     # pre-compute coordinate arrays:
-    coord_arrays = create_coordinate_arrays(
+    coord_arrays, eff_center, coord_system = create_coordinate_arrays(
         images[0].shape,
         center=center,
         image2world=image2world,
@@ -264,7 +276,7 @@ c_{1,0,\\ldots}^2,\\ldots).
                 k = np.ravel_multi_index((m,) + pp, gshape)
                 a[i, j] -= a[i, k]
 
-    return a, b
+    return a, b, coord_arrays, eff_center, coord_system
 
 
 def lsq_solve(matrix, free_term, nimages=None):
