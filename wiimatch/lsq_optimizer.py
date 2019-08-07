@@ -17,7 +17,7 @@ __all__ = ['build_lsq_eqs', 'pinv_solve', 'rlu_solve']
 
 def build_lsq_eqs(images, masks, sigmas, degree, center=None,
                   image2world=None, center_cs='image'):
-    """
+    r"""
     Build system of linear equations whose solution would provide image
     intensity matching in the least squares sense.
 
@@ -211,7 +211,7 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     for i in range(sys_eq_array_size):
         # decompose first (row, or eq) flat index into "original" indices:
         lp = np.unravel_index(i, gshape)
-        l = lp[0]
+        l = lp[0]  # noqa: E741
         p = lp[1:]
 
         # compute known terms:
@@ -221,12 +221,12 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
 
             # compute array elements for m!=l:
             b[i] += _image_pixel_sum(
-                image_l = images[l],
-                image_m = images[m],
-                mask_l = masks[l],
-                mask_m = masks[m],
-                sigma2_l = sigmas2[l],
-                sigma2_m = sigmas2[m],
+                image_l=images[l],
+                image_m=images[m],
+                mask_l=masks[l],
+                mask_m=masks[m],
+                sigma2_l=sigmas2[l],
+                sigma2_m=sigmas2[m],
                 coord_arrays=coord_arrays,
                 p=p
             )
@@ -238,14 +238,14 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
             m = mp[0]
             pp = mp[1:]
 
-            if l == m:  # we will deal with this case in the next iteration
+            if l == m:  # noqa: E741  # we will deal with this case in the next iteration
                 continue
 
             a[i, j] = -_sigma_pixel_sum(
-                mask_l = masks[l],
-                mask_m = masks[m],
-                sigma2_l = sigmas2[l],
-                sigma2_m = sigmas2[m],
+                mask_l=masks[l],
+                mask_m=masks[m],
+                sigma2_l=sigmas2[l],
+                sigma2_m=sigmas2[m],
                 coord_arrays=coord_arrays,
                 p=p,
                 pp=pp
@@ -255,7 +255,7 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     for i in range(sys_eq_array_size):
         # decompose first (row, or eq) flat index into "original" indices:
         lp = np.unravel_index(i, gshape)
-        l = lp[0]
+        l = lp[0]  # noqa: E741
         p = lp[1:]
 
         for ppi in range(npolycoeff):
@@ -326,7 +326,7 @@ def pinv_solve(matrix, free_term, nimages, tol=None):
 
     """
     if tol is None:
-        tol = np.finfo(matrix.dtype).eps**(2.0/3.0)
+        tol = np.finfo(matrix.dtype).eps**(2.0 / 3.0)
     v = np.dot(np.linalg.pinv(matrix, rcond=tol), free_term)
     bkg_poly_coeff = v.reshape((nimages, v.size // nimages))
     return bkg_poly_coeff
@@ -386,7 +386,7 @@ def rlu_solve(matrix, free_term, nimages):
              5.96855898e-16, -2.98427949e-16]])
 
     """
-    drop =  free_term.size // nimages
+    drop = free_term.size // nimages
     if nimages <= 1:
         return np.zeros((1, drop), dtype=np.float)
     from scipy import linalg
