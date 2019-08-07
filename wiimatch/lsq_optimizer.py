@@ -92,7 +92,7 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     :py:func:`build_lsq_eqs` builds a system of linear equations
 
     .. math::
-        a \\cdot c = b
+        a \cdot c = b
 
     whose solution :math:`c` is a set of coefficients of (multivariate)
     polynomials that represent the "background" in each input image (these are
@@ -100,8 +100,8 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     that the following sum is minimized:
 
     .. math::
-        L = \sum^N_{n,m=1,n \\neq m} \sum_k\
-        \\frac{\\left[I_n(k) - I_m(k) - P_n(k) + P_m(k)\\right]^2}\
+        L = \sum^N_{n,m=1,n \neq m} \sum_k
+        \frac{\left[I_n(k) - I_m(k) - P_n(k) + P_m(k)\right]^2}
         {\sigma^2_n(k) + \sigma^2_m(k)}.
 
     In the above equation, index :math:`k=(k_1,k_2,...)` labels a position
@@ -112,15 +112,16 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     corresponding coefficients as:
 
     .. math::
-        P_n(k_1,k_2,...) = \sum_{d_1=0,d_2=0,...}^{D_1,D_2,...} \
-        c_{d_1,d_2,...}^n \\cdot k_1^{d_1} \\cdot k_2^{d_2}  \\cdot \\ldots .
+        P_n(k_1,k_2,...) = \sum_{d_1=0,d_2=0,...}^{D_1,D_2,...}
+        c_{d_1,d_2,...}^n \cdot k_1^{d_1} \cdot k_2^{d_2}  \cdot \ldots .
 
     Coefficients :math:`c_{d_1,d_2,...}^n` are arranged in the vector :math:`c`
     in the following order:
 
     .. math::
-        (c_{0,0,\\ldots}^1,c_{1,0,\\ldots}^1,\\ldots,c_{0,0,\\ldots}^2,\
-        c_{1,0,\\ldots}^2,\\ldots).
+        (c_{0,0,\ldots}^1,c_{1,0,\ldots}^1,\ldots,c_{0,0,\ldots}^2,
+        c_{1,0,\ldots}^2,\ldots).
+
 
     Examples
     --------
@@ -276,7 +277,7 @@ def pinv_solve(matrix, free_term, nimages, tol=None):
     Solves a system of linear equations
 
     .. math::
-        a \\cdot c = b.
+        a \ cdot c = b.
 
     using Moore-Penrose pseudoinverse.
 
@@ -333,11 +334,11 @@ def pinv_solve(matrix, free_term, nimages, tol=None):
 
 
 def rlu_solve(matrix, free_term, nimages):
-    """
+    r"""
     Computes solution of a "reduced" system of linear equations
 
     .. math::
-        a' \\cdot c' = b'.
+        a' \cdot c' = b'.
 
     using LU-decomposition. If the original system contained a set of
     linearly-dependent equations, then the "reduced" system is formed by
