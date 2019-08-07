@@ -1,5 +1,4 @@
 """wiimatch"""
-import os
 from pkg_resources import get_distribution, DistributionNotFound
 
 
@@ -14,6 +13,6 @@ except DistributionNotFound:
     __version__ = 'UNKNOWN'
 
 
-from . import match
-from . import lsq_optimizer
-from . import utils
+from . import match  # noqa: F401
+from . import lsq_optimizer  # noqa: F401
+from . import utils  # noqa: F401

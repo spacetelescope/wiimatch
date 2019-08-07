@@ -20,7 +20,7 @@ SUPPORTED_SOLVERS = ['RLU', 'PINV']
 def match_lsq(images, masks=None, sigmas=None, degree=0,
               center=None, image2world=None, center_cs='image',
               ext_return=False, solver='RLU'):
-    """
+    r"""
     Compute coefficients of (multivariate) polynomials that once subtracted
     from input images would provide image intensity matching in the least
     squares sense.
@@ -254,7 +254,7 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     if solver == 'RLU':
         bkg_poly_coef = rlu_solve(a, b, nimages)
     else:
-        tol = np.finfo(images[0].dtype).eps**(2.0/3.0)
+        tol = np.finfo(images[0].dtype).eps**(2.0 / 3.0)
         bkg_poly_coef = pinv_solve(a, b, nimages, tol)
 
     if ext_return:
