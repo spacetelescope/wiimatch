@@ -1,9 +1,31 @@
-=========
-CHANGELOG
-=========
+.. _release_notes:
 
-v0.1.2 (12-June-2017)
-=====================
+=============
+Release Notes
+=============
+
+.. 0.2.1 (unreleased)
+   ==================
+
+
+0.2.0 (unreleased)
+==================
+
+Added
+^^^^^
+
+- Added a new, more stable, solver ``rlu_solve()``. ``match_lsq()`` now takes
+  a new parameter ``solver`` which, by default, is set to ``'LU'`` - the
+  new solver. [#1]
+
+Fixed
+^^^^^
+
+- Updated package structure, setup, docs. [#1]
+
+
+0.1.2 (12-June-2017)
+====================
 
 Added
 ^^^^^
@@ -27,8 +49,8 @@ Added
     New parameter ``ext_return`` indicates to return extended information.
 
 
-v0.1.1 (06-June-2017)
-=====================
+0.1.1 (06-June-2017)
+====================
 
 Added
 ^^^^^
@@ -46,7 +68,7 @@ Fixed
   for generating coordinate arrays.
 
 
-v0.1.0 (09-May-2017)
-====================
+0.1.0 (09-May-2017)
+===================
 
 Initial release.

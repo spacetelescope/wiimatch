@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 import os
-import subprocess
-import sys
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 
 try:
     from distutils.config import ConfigParser
@@ -19,63 +16,71 @@ PACKAGENAME = metadata.get('package_name', 'wiimatch')
 DESCRIPTION = metadata.get('description', 'A package for optimal "matching" '
                            'N-dimentional image background using '
                            '(multivariate) polynomials')
+LONG_DESCRIPTION = metadata.get('long_description', 'README.rst')
+LONG_DESCRIPTION_CONTENT_TYPE = metadata.get('long_description_content_type',
+                                             'text/x-rst')
 AUTHOR = metadata.get('author', 'Mihai Cara')
 AUTHOR_EMAIL = metadata.get('author_email', 'help@stsci.edu')
-URL = metadata.get('url', 'https://www.stsci.edu/')
+URL = metadata.get('url', 'https://github.com/spacetelescope/wiimatch')
 LICENSE = metadata.get('license', 'BSD-3-Clause')
 
-if os.path.exists('relic'):
-    sys.path.insert(1, 'relic')
-    import relic.release
-else:
-    try:
-        import relic.release
-    except ImportError:
-        try:
-            subprocess.check_call(['git', 'clone',
-                                   'https://github.com/jhunkeler/relic.git'])
-            sys.path.insert(1, 'relic')
-            import relic.release
-        except subprocess.CalledProcessError as e:
-            print(e)
-            exit(1)
+# load long description
+this_dir = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(this_dir, LONG_DESCRIPTION), encoding='utf-8') as f:
+    long_description = f.read()
 
-version = relic.release.get_info()
-if not version.date:
-    default_version = metadata.get('version', '')
-    default_version_date = metadata.get('version-date', '')
-    version = relic.git.GitVersion(
-        pep386=default_version,
-        short=default_version,
-        long=default_version,
-        date=default_version_date,
-        dirty=True,
-        commit='',
-        post='-1'
-    )
-relic.release.write_template(version, PACKAGENAME)
+PACKAGE_DATA = {
+    '': [
+        'README.rst',
+        'LICENSE.txt',
+        'CHANGELOG.rst',
+        '*.fits',
+        '*.txt',
+        '*.inc',
+        '*.cfg',
+        '*.csv',
+        '*.yaml',
+        '*.json'
+    ],
+}
 
+INSTALL_REQUIRES = [
+    'numpy',
+]
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = ['wiimatch/tests']
-        self.test_suite = True
+SETUP_REQUIRES = [
+    'setuptools_scm',
+]
 
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.test_args)
-        sys.exit(errno)
+TESTS_REQUIRE = [
+    'pytest',
+    'pytest-cov',
+    'pytest-doctestplus',
+    'codecov',
+]
 
+DOCS_REQUIRE = [
+    'numpydoc',
+    'graphviz',
+    'sphinx<=1.8.5',
+    'sphinx_rtd_theme',
+    'stsci_rtd_theme',
+    'sphinx_automodapi',
+]
+
+OPTIONAL_DEP = [
+    'scipy',
+]
+
+ALL_REQUIRE = list(set(DOCS_REQUIRE + TESTS_REQUIRE + OPTIONAL_DEP))
 
 setup(
     name=PACKAGENAME,
-    version=version.pep386,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
-    license=LICENSE,
+    long_description=long_description,
+    long_description_content_type=LONG_DESCRIPTION_CONTENT_TYPE,
     url=URL,
     classifiers=[
         'Intended Audience :: Science/Research',
@@ -84,11 +89,24 @@ setup(
         'Programming Language :: Python',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Software Development :: Libraries :: Python Modules',
+        'Development Status :: 3 - Alpha',
     ],
-    install_requires=[
-        'numpy',
-    ],
-    tests_require=['pytest'],
+    use_scm_version=True,
+    setup_requires=SETUP_REQUIRES,
+    python_requires='>=3.5',
+    install_requires=INSTALL_REQUIRES,
+    tests_require=TESTS_REQUIRE,
     packages=find_packages(),
-    cmdclass = {'test': PyTest}
+    package_data=PACKAGE_DATA,
+    ext_modules=[],
+    extras_require={
+        'docs': DOCS_REQUIRE,
+        'test': TESTS_REQUIRE,
+        'all': ALL_REQUIRE,
+    },
+    project_urls={
+        'Bug Reports': 'https://github.com/spacetelescope/wiimatch/issues/',
+        'Source': 'https://github.com/spacetelescope/wiimatch/',
+        'Help': 'https://hsthelp.stsci.edu/',
+    },
 )

@@ -7,25 +7,19 @@ N-dimensional image intensity data using (multivariate) polynomials.
 :License: :doc:`../LICENSE`
 
 """
-from __future__ import (absolute_import, division, unicode_literals,
-                        print_function)
-
-# STDLIB
-import copy
-import sets
-
 import numpy as np
-from stsci.tools.bitmask import interpret_bit_flags
 
-from .lsq_optimizer import build_lsq_eqs, lsq_solve
+from .lsq_optimizer import build_lsq_eqs, pinv_solve, rlu_solve
 
 
 __all__ = ['match_lsq']
 
+SUPPORTED_SOLVERS = ['RLU', 'PINV']
+
 
 def match_lsq(images, masks=None, sigmas=None, degree=0,
               center=None, image2world=None, center_cs='image',
-              ext_return=False):
+              ext_return=False, solver='RLU'):
     """
     Compute coefficients of (multivariate) polynomials that once subtracted
     from input images would provide image intensity matching in the least
@@ -85,6 +79,9 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
         below) that match image intensities in the LSQ sense. See **Returns**
         section for more details.
 
+    solver : {'RLU', 'PINV'}, optional
+        Specifies method for solving the system of equations.
+
     Returns
     -------
     bkg_poly_coeff : numpy.ndarray
@@ -131,8 +128,8 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
 
     .. math::
         L = \sum^N_{n,m=1,n \\neq m} \sum_k\
-\\frac{\\left[I_n(k) - I_m(k) - P_n(k) + P_m(k)\\right]^2}\
-{\sigma^2_n(k) + \sigma^2_m(k)}.
+    \\frac{\\left[I_n(k) - I_m(k) - P_n(k) + P_m(k)\\right]^2}\
+    {\sigma^2_n(k) + \sigma^2_m(k)}.
 
     In the above equation, index :math:`k=(k_1,k_2,...)` labels a position
     in input image's pixel grid [NOTE: all input images share a common
@@ -143,41 +140,40 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
 
     .. math::
         P_n(k_1,k_2,...) = \sum_{d_1=0,d_2=0,...}^{D_1,D_2,...} \
-c_{d_1,d_2,...}^n \\cdot k_1^{d_1} \\cdot k_2^{d_2}  \\cdot \\ldots .
+        c_{d_1,d_2,...}^n \\cdot k_1^{d_1} \\cdot k_2^{d_2}  \\cdot \\ldots .
 
     Coefficients :math:`c_{d_1,d_2,...}^n` are arranged in the vector :math:`c`
     in the following order:
 
     .. math::
         (c_{0,0,\\ldots}^1,c_{1,0,\\ldots}^1,\\ldots,c_{0,0,\\ldots}^2,\
-c_{1,0,\\ldots}^2,\\ldots).
+        c_{1,0,\\ldots}^2,\\ldots).
 
     :py:func:`match_lsq` returns coefficients of the polynomials that
     minimize *L*.
 
     Examples
     --------
->>> import wiimatch
->>> import numpy as np
->>> im1 = np.zeros((5, 5, 4), dtype=np.float)
->>> cbg = 1.32 * np.ones_like(im1)
->>> ind = np.indices(im1.shape, dtype=np.float)
->>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
->>> mask = np.ones_like(im1, dtype=np.int8)
->>> sigma = np.ones_like(im1, dtype=np.float)
->>> wiimatch.match.match_lsq([im1, im3], [mask, mask], [sigma, sigma],
-... degree=(1,1,1), center=(0,0,0))
-array([[ -6.60000000e-01,  -7.50000000e-02,  -3.10000000e-01,
-          3.33066907e-15,  -3.70000000e-01,   5.44009282e-15,
-          7.88258347e-15,  -2.33146835e-15],
-       [  6.60000000e-01,   7.50000000e-02,   3.10000000e-01,
-         -4.44089210e-15,   3.70000000e-01,  -4.21884749e-15,
-         -7.43849426e-15,   1.77635684e-15]])
+    >>> import wiimatch
+    >>> import numpy as np
+    >>> im1 = np.zeros((5, 5, 4), dtype=np.float)
+    >>> cbg = 1.32 * np.ones_like(im1)
+    >>> ind = np.indices(im1.shape, dtype=np.float)
+    >>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
+    >>> mask = np.ones_like(im1, dtype=np.int8)
+    >>> sigma = np.ones_like(im1, dtype=np.float)
+    >>> wiimatch.match.match_lsq([im1, im3], [mask, mask], [sigma, sigma],
+    ... degree=(1,1,1), center=(0,0,0))   # doctest: +FLOAT_CMP
+    array([[-6.60000000e-01, -7.50000000e-02, -3.10000000e-01,
+            -6.96331881e-16, -3.70000000e-01, -1.02318154e-15,
+            -5.96855898e-16,  2.98427949e-16],
+           [ 6.60000000e-01,  7.50000000e-02,  3.10000000e-01,
+             6.96331881e-16,  3.70000000e-01,  1.02318154e-15,
+             5.96855898e-16, -2.98427949e-16]])
 
     """
-
     # check that all images have the same shape:
-    shapes = sets.Set()
+    shapes = set([])
     for im in images:
         shapes.add(im.shape)
     if len(shapes) > 1:
@@ -255,7 +251,11 @@ array([[ -6.60000000e-01,  -7.50000000e-02,  -3.10000000e-01,
     )
 
     # solve the system:
-    bkg_poly_coef = lsq_solve(a, b, nimages)
+    if solver == 'RLU':
+        bkg_poly_coef = rlu_solve(a, b, nimages)
+    else:
+        tol = np.finfo(images[0].dtype).eps**(2.0/3.0)
+        bkg_poly_coef = pinv_solve(a, b, nimages, tol)
 
     if ext_return:
         return bkg_poly_coef, a, b, coord_arrays, eff_center, coord_system
