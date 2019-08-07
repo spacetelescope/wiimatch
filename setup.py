@@ -72,8 +72,6 @@ OPTIONAL_DEP = [
     'scipy',
 ]
 
-ALL_REQUIRE = list(set(DOCS_REQUIRE + TESTS_REQUIRE + OPTIONAL_DEP))
-
 setup(
     name=PACKAGENAME,
     author=AUTHOR,
@@ -102,7 +100,7 @@ setup(
     extras_require={
         'docs': DOCS_REQUIRE,
         'test': TESTS_REQUIRE,
-        'all': ALL_REQUIRE,
+        'all': OPTIONAL_DEP,
     },
     project_urls={
         'Bug Reports': 'https://github.com/spacetelescope/wiimatch/issues/',
