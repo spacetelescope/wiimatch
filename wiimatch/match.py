@@ -119,7 +119,7 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     :py:func:`match_lsq` builds a system of linear equations
 
     .. math::
-        a \\cdot c = b
+        a \cdot c = b
 
     whose solution :math:`c` is a set of coefficients of (multivariate)
     polynomials that represent the "background" in each input image (these are
@@ -127,9 +127,9 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     that the following sum is minimized:
 
     .. math::
-        L = \sum^N_{n,m=1,n \\neq m} \sum_k\
-    \\frac{\\left[I_n(k) - I_m(k) - P_n(k) + P_m(k)\\right]^2}\
-    {\sigma^2_n(k) + \sigma^2_m(k)}.
+        L = \sum^N_{n,m=1,n \neq m} \sum_k
+        \frac{\left[I_n(k) - I_m(k) - P_n(k) + P_m(k)\right]^2}
+        {\sigma^2_n(k) + \sigma^2_m(k)}.
 
     In the above equation, index :math:`k=(k_1,k_2,...)` labels a position
     in input image's pixel grid [NOTE: all input images share a common
@@ -139,15 +139,15 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     corresponding coefficients as:
 
     .. math::
-        P_n(k_1,k_2,...) = \sum_{d_1=0,d_2=0,...}^{D_1,D_2,...} \
-        c_{d_1,d_2,...}^n \\cdot k_1^{d_1} \\cdot k_2^{d_2}  \\cdot \\ldots .
+        P_n(k_1,k_2,...) = \sum_{d_1=0,d_2=0,...}^{D_1,D_2,...}
+        c_{d_1,d_2,...}^n \cdot k_1^{d_1} \cdot k_2^{d_2}  \cdot \ldots .
 
     Coefficients :math:`c_{d_1,d_2,...}^n` are arranged in the vector :math:`c`
     in the following order:
 
     .. math::
-        (c_{0,0,\\ldots}^1,c_{1,0,\\ldots}^1,\\ldots,c_{0,0,\\ldots}^2,\
-        c_{1,0,\\ldots}^2,\\ldots).
+        (c_{0,0,\ldots}^1,c_{1,0,\ldots}^1,\ldots,c_{0,0,\ldots}^2,
+        c_{1,0,\ldots}^2,\ldots).
 
     :py:func:`match_lsq` returns coefficients of the polynomials that
     minimize *L*.
