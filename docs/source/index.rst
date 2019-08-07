@@ -1,7 +1,11 @@
 Welcome to wiimatch documentation!
 ==================================
 
-.. include:: ../README.md
+``wiimatch`` is a package that provides core computational algorithms for
+optimal "matching" of weighted N-dimensional image intensity data using
+(multivariate) polynomials.
+
+.. moduleauthor:: Mihai Cara <help@stsci.edu>
 
 Content
 =======
@@ -9,11 +13,10 @@ Content
 .. toctree::
    :maxdepth: 2
 
-   wiimatch/match
-   wiimatch/lsq_optimizer
-   wiimatch/utils
+   match
+   lsq_optimizer
+   utils
    LICENSE.rst
-
 
 Development Notes
 =================

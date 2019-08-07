@@ -1,17 +1,18 @@
 """wiimatch"""
-
-from __future__ import (absolute_import, division, unicode_literals,
-                        print_function)
 import os
+from pkg_resources import get_distribution, DistributionNotFound
 
 
 __docformat__ = 'restructuredtext en'
-__version__ = '0.1.1'
-__version_date__ = '08-June-2017'
 __author__ = 'Mihai Cara'
 
 
-from .version import *
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    __version__ = 'UNKNOWN'
+
 
 from . import match
 from . import lsq_optimizer

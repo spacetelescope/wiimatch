@@ -10,7 +10,7 @@ BUILDDIR      = _build
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS)
 
@@ -18,7 +18,6 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS)
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
-
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -81,17 +80,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/packagename.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/wiimatch.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/packagename.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/wiimatch.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/packagename"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/packagename"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/wiimatch"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/wiimatch"
 	@echo "# devhelp"
 
 epub:
