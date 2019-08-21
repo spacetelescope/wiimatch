@@ -46,6 +46,7 @@ PACKAGE_DATA = {
 
 INSTALL_REQUIRES = [
     'numpy',
+    'scipy',
 ]
 
 SETUP_REQUIRES = [
