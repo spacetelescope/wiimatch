@@ -12,5 +12,6 @@ ignore_errors = True
 omit =
     conftest.py
     setup.py
+    docs/*
     tests/*
     wiimatch/tests/*
