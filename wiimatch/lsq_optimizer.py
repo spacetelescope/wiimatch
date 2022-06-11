@@ -273,11 +273,11 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
 
 
 def pinv_solve(matrix, free_term, nimages, tol=None):
-    """
+    r"""
     Solves a system of linear equations
 
     .. math::
-        a \ cdot c = b.
+        a \cdot c = b.
 
     using Moore-Penrose pseudoinverse.
 

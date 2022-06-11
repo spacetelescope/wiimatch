@@ -1,10 +1,9 @@
 """
-A module containing unit tests for the `wcsutil` module.
+A module containing unit tests for the ``wcsutil`` module.
 
-Licensed under a 3-clause BSD style license - see LICENSE.rst
+:License: :doc:`../LICENSE`
 
 """
-import pytest
 import numpy as np
 
 from wiimatch import utils
@@ -27,6 +26,6 @@ def test_utils_coordinates_no_center():
 
     center = tuple(i // 2 for i in image_shape)
     for orig, cc, i in zip(center, c[0], ind):
-        assert(i - orig, cc)
+        assert np.allclose(i - orig, cc)
 
     assert np.allclose(c[1], center, rtol=1.e-8, atol=1.e-12)
