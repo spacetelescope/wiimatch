@@ -1,7 +1,7 @@
 """
-A module containing unit tests for the `wcsutil` module.
+A module containing unit tests for the ``wcsutil`` module.
 
-Licensed under a 3-clause BSD style license - see LICENSE.rst
+:License: :doc:`../LICENSE`
 
 """
 import pytest
