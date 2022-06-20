@@ -13,10 +13,10 @@ Content
 .. toctree::
    :maxdepth: 2
 
-   match
-   lsq_optimizer
-   utils
-   LICENSE.rst
+   source/match
+   source/lsq_optimizer
+   source/utils
+   source/LICENSE.rst
 
 Development Notes
 =================
@@ -25,12 +25,11 @@ Development Notes
    :maxdepth: 1
    :titlesonly:
 
-   CHANGELOG.rst
+   source/CHANGELOG.rst
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
