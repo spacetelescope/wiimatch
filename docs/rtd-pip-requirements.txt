@@ -1,2 +1,8 @@
 setuptools
 numpy
+numpydoc
+sphinx
+sphinx-automodapi
+sphinx-rtd-theme
+stsci-rtd-theme
+graphviz
