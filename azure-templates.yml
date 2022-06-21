@@ -52,13 +52,7 @@ jobs:
         codecov -t $codecov_token
       env:
         codecov_token: $(CODECOV_TOKEN)
-      condition: ne( variables['Agent.OS'], 'Windows_NT' )
-      displayName: codecov upload on Linux/Darwin
-
-    - powershell: |
-        codecov -t "$(CODECOV_TOKEN)"
-      condition: eq( variables['Agent.OS'], 'Windows_NT' )
-      displayName: codecov upload on Windows
+      displayName: codecov upload
 
     - task: PublishTestResults@2
       condition: succeededOrFailed()
