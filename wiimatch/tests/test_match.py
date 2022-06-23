@@ -14,15 +14,15 @@ from wiimatch import match
 def test_match_lsq_solver(solver):
     # simulate background image data:
     c = [1.32, 0.15, 0.62, 0, 0.74, 0, 0, 0]
-    im1 = np.zeros((5, 5, 4), dtype=np.float)
+    im1 = np.zeros((5, 5, 4), dtype=float)
     cbg = c[0] * np.ones_like(im1)  # constand background level image
 
     # add slope:
-    ind = np.indices(im1.shape, dtype=np.float)
+    ind = np.indices(im1.shape, dtype=float)
     im3 = cbg + c[1] * ind[0] + c[2] * ind[1] + c[4] * ind[2]
 
     mask = np.ones_like(im1, dtype=np.int8)
-    sigma = np.ones_like(im1, dtype=np.float)
+    sigma = np.ones_like(im1, dtype=float)
 
     p = match.match_lsq(
         [im1, im3], [mask, mask], [sigma, sigma],
@@ -36,15 +36,15 @@ def test_match_lsq_solver(solver):
 def test_match_lsq_extended_return():
     # simulate background image data:
     c = [1.32, 0.15, 0.62, 0, 0.74, 0, 0, 0]
-    im1 = np.zeros((5, 5, 4), dtype=np.float)
+    im1 = np.zeros((5, 5, 4), dtype=float)
     cbg = c[0] * np.ones_like(im1)  # constand background level image
 
     # add slope:
-    ind = np.indices(im1.shape, dtype=np.float)
+    ind = np.indices(im1.shape, dtype=float)
     im3 = cbg + c[1] * ind[0] + c[2] * ind[1] + c[4] * ind[2]
 
     mask = np.ones_like(im1, dtype=np.int8)
-    sigma = np.ones_like(im1, dtype=np.float)
+    sigma = np.ones_like(im1, dtype=float)
 
     p, a, b, coord_arrays, eff_center, coord_system = match.match_lsq(
         [im1, im3], [mask, mask], [sigma, sigma],
@@ -59,15 +59,15 @@ def test_match_lsq_extended_return():
 def test_match_lsq_num_degree(degree):
     # simulate background image data:
     c = [1.32, 0.15, 0.62, 0, 0.74, 0, 0, 0]
-    im1 = np.zeros((5, 5, 4), dtype=np.float)
+    im1 = np.zeros((5, 5, 4), dtype=float)
     cbg = c[0] * np.ones_like(im1)  # constand background level image
 
     # add slope:
-    ind = np.indices(im1.shape, dtype=np.float)
+    ind = np.indices(im1.shape, dtype=float)
     im3 = cbg + c[1] * ind[0] + c[2] * ind[1] + c[4] * ind[2]
 
     mask = np.ones_like(im1, dtype=np.int8)
-    sigma = np.ones_like(im1, dtype=np.float)
+    sigma = np.ones_like(im1, dtype=float)
 
     p = match.match_lsq(
         [im1, im3], [mask, mask], [sigma, sigma],

@@ -4,8 +4,13 @@
 Release Notes
 =============
 
-.. 0.2.1 (unreleased)
+.. 0.2.2 (unreleased)
    ==================
+
+0.2.1 (unreleased)
+==================
+
+- Updated code to reduce warnings with latest ``numpy`` versions. [#16]
 
 
 0.2.0 (07-August-2019)
