@@ -172,6 +172,15 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
              5.96855898e-16, -2.98427949e-16]])
 
     """
+    solver = solver.upper()
+    if solver not in SUPPORTED_SOLVERS:
+        ns = len(SUPPORTED_SOLVERS)
+        raise ValueError("'solver' must be one of the supported solvers: '{}'"
+                         .format(SUPPORTED_SOLVERS[0] if ns == 1 else
+                                 '\', \''.join(SUPPORTED_SOLVERS[:-1]) +
+                                 '\'' + (',' if ns > 2 else '') +
+                                 ' or \'{}'.format(SUPPORTED_SOLVERS[-1])))
+
     # check that all images have the same shape:
     shapes = set([])
     for im in images:
