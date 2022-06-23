@@ -239,7 +239,8 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
             m = mp[0]
             pp = mp[1:]
 
-            if l == m:  # noqa: E741  # we will deal with this case in the next iteration
+            if l == m:  # noqa: E741
+                # we will deal with this case in the next iteration
                 continue
 
             a[i, j] = -_sigma_pixel_sum(
@@ -345,7 +346,7 @@ def rlu_solve(matrix, free_term, nimages):
     dropping equations and unknowns related to the first image. The unknowns
     corresponding to the first image initially are assumed to be 0.
     Upon solving the reduced system, these unknowns are recomputed so that
-    mean corection coefficients for all images are 0.
+    mean correction coefficients for all images are 0.
     This function uses `~scipy.linalg.lu_solve` and
     `~scipy.linalg.lu_factor` functions.
 
