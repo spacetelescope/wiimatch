@@ -7,6 +7,8 @@ N-dimensional images using (multi-variate) polynomials.
 :License: :doc:`LICENSE`
 
 """
+from numbers import Number
+
 import numpy as np
 
 from .utils import create_coordinate_arrays
@@ -174,19 +176,37 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     """
     nimages = len(images)
 
-    if nimages != len(sigmas):
-        raise ValueError("Length of sigmas list must match the length of the "
-                         "image list.")
+    if sigmas is None:
+        sigmas2 = nimages * [None]
+        nns = nimages
+    else:
+        if nimages != len(sigmas):
+            raise ValueError("Length of sigmas list must match the length of "
+                             "the image list.")
+        nns = sum(int(s is None) for s in sigmas)
+        if nns > 0:
+            if nns != nimages:
+                raise ValueError("'sigmas' must be either None, or a list of "
+                                 "all None, or a list of all numpy.ndarray")
+            sigmas2 = nimages * [None]
+        else:
+            sigmas2 = [s**2 for s in sigmas]
 
     # exclude pixels that have non-positive associated sigmas except the case
     # when all sigmas are non-positive
-    for m, s in zip(masks, sigmas):
-        ps = (s > 0)
-        if not np.all(~ps):
-            m &= ps
+    if masks is None or masks[0] is None:
+        if nns == 0:
+            masks = [(s > 0) for s in sigmas]
+        elif masks is None:
+            masks = nimages * [None]
+    elif nns == 0:
+        masks = [m & (s > 0) for m, s in zip(masks, sigmas)]
 
     # compute squares of sigmas for repeated use later
-    sigmas2 = [s**2 for s in sigmas]
+    if sigmas is None or sigmas[0] is None:
+        sigmas2 = nimages * [None]
+    else:
+        sigmas2 = [s**2 for s in sigmas]
 
     degree1 = tuple([d + 1 for d in degree])
 
@@ -402,8 +422,8 @@ def rlu_solve(matrix, free_term, nimages):
     return bkg_poly_coeff
 
 
-def _image_pixel_sum(image_l, image_m, mask_l, mask_m,
-                     sigma2_l, sigma2_m, coord_arrays=None, p=None):
+def _image_pixel_sum(image_l, image_m, mask_l, mask_m, sigma2_l, sigma2_m,
+                     coord_arrays=None, p=None):
     # Compute sum of:
     # coord_arrays^(p) * (image_l - image_m) / (sigma_l**2 + sigma_m**2)
     #
@@ -414,16 +434,29 @@ def _image_pixel_sum(image_l, image_m, mask_l, mask_m,
     # NOTE: this function does not check that sigma2 arrays have same shapes
     #       as the coord_arrays arrays (for efficiency purpose).
 
-    cmask = np.logical_and(mask_l, mask_m)
+    # In this IF prioritize most likely scenarios:
+    if mask_l is not None and mask_m is not None:
+        cmask = np.logical_and(mask_l, mask_m)
+    elif mask_l is None and mask_m is None:
+        cmask = None
+    elif mask_m is None:
+        cmask = mask_l
+    elif mask_l is None:
+        cmask = mask_m
+
+    if cmask is not None:
+        image_l = image_l[cmask]
+        image_m = image_m[cmask]
+        if not isinstance(sigma2_l, Number):
+            sigma2_l = sigma2_l[cmask]
+        if not isinstance(sigma2_m, Number):
+            sigma2_m = sigma2_m[cmask]
 
     if coord_arrays is None:
         if p is not None:
             raise ValueError("When pixel indices are None then exponent list "
                              "must be None as well.")
-
-        return np.sum((image_l[cmask] - image_m[cmask]) /
-                      (sigma2_l[cmask] + sigma2_m[cmask]),
-                      dtype=float)
+        return np.sum((image_l - image_m) / (sigma2_l + sigma2_m), dtype=float)
 
     if len(coord_arrays) != len(p):
         raise ValueError("Lengths of the list of pixel index arrays and "
@@ -433,13 +466,13 @@ def _image_pixel_sum(image_l, image_m, mask_l, mask_m,
         raise ValueError("There has to be at least one pixel index.")
 
     i = coord_arrays[0]**p[0]
-
     for c, ip in zip(coord_arrays[1:], p[1:]):
         i *= c**ip
 
-    return np.sum(i[cmask] * (image_l[cmask] - image_m[cmask]) /
-                  (sigma2_l[cmask] + sigma2_m[cmask]),
-                  dtype=float)
+    if cmask is not None:
+        i = i[cmask]
+
+    return np.sum(i * (image_l - image_m) / (sigma2_l + sigma2_m), dtype=float)
 
 
 def _sigma_pixel_sum(mask_l, mask_m, sigma2_l, sigma2_m,
@@ -453,15 +486,28 @@ def _sigma_pixel_sum(mask_l, mask_m, sigma2_l, sigma2_m,
     # NOTE: this function does not check that sigma2 arrays have same shapes
     #       as the coord_arrays arrays (for efficiency purpose).
 
-    cmask = np.logical_and(mask_l, mask_m)
+    # In this IF prioritize most likely scenarios:
+    if mask_l is not None and mask_m is not None:
+        cmask = np.logical_and(mask_l, mask_m)
+    elif mask_l is None and mask_m is None:
+        cmask = None
+    elif mask_m is None:
+        cmask = mask_l
+    elif mask_l is None:
+        cmask = mask_m
+
+    if cmask is not None:
+        if not isinstance(sigma2_l, Number):
+            sigma2_l = sigma2_l[cmask]
+        if not isinstance(sigma2_m, Number):
+            sigma2_m = sigma2_m[cmask]
 
     if coord_arrays is None:
         if p is not None or pp is not None:
             raise ValueError("When pixel indices are None then exponent lists "
                              "must be None as well.")
 
-        return np.sum(1.0 / (sigma2_l[cmask] + sigma2_m[cmask]),
-                      dtype=float)
+        return np.sum(1.0 / (sigma2_l + sigma2_m), dtype=float)
 
     if len(coord_arrays) != len(p) or len(p) != len(pp):
         raise ValueError("Lengths of the list of pixel index arrays and "
@@ -472,9 +518,10 @@ def _sigma_pixel_sum(mask_l, mask_m, sigma2_l, sigma2_m,
         raise ValueError("There has to be at least one pixel index.")
 
     i = coord_arrays[0]**(p[0] + pp[0])
-
     for c, ip, ipp in zip(coord_arrays[1:], p[1:], pp[1:]):
         i *= c**(ip + ipp)
 
-    return np.sum(i[cmask] / (sigma2_l[cmask] + sigma2_m[cmask]),
-                  dtype=float)
+    if cmask is not None:
+        i = i[cmask]
+
+    return np.sum(i / (sigma2_l + sigma2_m), dtype=float)
