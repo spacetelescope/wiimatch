@@ -13,7 +13,7 @@ Release Notes
 - Updated code to reduce warnings with latest ``numpy`` versions. [#16]
 
 - Optimized code to improve performance and minimize memory usage when either
-  ``masks`` and/or ``sigmas`` have default values. [#17]
+  ``masks`` and/or ``sigmas`` have default values. [#18, #19]
 
 
 0.2.0 (07-August-2019)

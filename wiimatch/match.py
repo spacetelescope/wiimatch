@@ -194,7 +194,7 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     # check that the number of good pixel mask arrays matches the numbers
     # of input images, and if 'masks' is None - set all of them to True:
     if masks is None:
-        masks = [np.ones_like(images[0], dtype=bool) for i in images]
+        masks = [None for _ in images]
 
     else:
         if len(masks) != nimages:
@@ -213,7 +213,7 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     # check that the number of sigma arrays matches the numbers
     # of input images, and if 'sigmas' is None - set all of them to 1:
     if sigmas is None:
-        sigmas = [np.ones_like(images[0], dtype=float) for i in images]
+        sigmas = [1.0 for _ in images]
 
     else:
         if len(sigmas) != nimages:
