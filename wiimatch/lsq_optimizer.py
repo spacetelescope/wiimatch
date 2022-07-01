@@ -229,6 +229,21 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     a = np.zeros((sys_eq_array_size, sys_eq_array_size), dtype=float)
     b = np.zeros(sys_eq_array_size, dtype=float)
 
+    pset = [set() for _ in coord_arrays]
+    for i in range(sys_eq_array_size):
+        p = np.unravel_index(i, gshape)[1:]
+        for k, s in enumerate(pset):
+            s.add(p[k])
+        for j in range(sys_eq_array_size):
+            pp = np.unravel_index(j, gshape)[1:]
+            for k, s in enumerate(pset):
+                s.add(p[k] + pp[k])
+
+    coord_pow = [dict() for _ in pset]
+    for s, c, cp in zip(pset, coord_arrays, coord_pow):
+        for p in s:
+            cp[p] = c**p
+
     for i in range(sys_eq_array_size):
         # decompose first (row, or eq) flat index into "original" indices:
         lp = np.unravel_index(i, gshape)
@@ -249,7 +264,8 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
                 sigma2_l=sigmas2[l],
                 sigma2_m=sigmas2[m],
                 coord_arrays=coord_arrays,
-                p=p
+                p=p,
+                coord_pow=coord_pow
             )
 
         for j in range(sys_eq_array_size):
@@ -270,7 +286,8 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
                 sigma2_m=sigmas2[m],
                 coord_arrays=coord_arrays,
                 p=p,
-                pp=pp
+                pp=pp,
+                coord_pow=coord_pow
             )
 
     # now compute coefficients of array 'a' for l==m:
@@ -423,7 +440,7 @@ def rlu_solve(matrix, free_term, nimages):
 
 
 def _image_pixel_sum(image_l, image_m, mask_l, mask_m, sigma2_l, sigma2_m,
-                     coord_arrays=None, p=None):
+                     coord_arrays=None, p=None, coord_pow=None):
     # Compute sum of:
     # coord_arrays^(p) * (image_l - image_m) / (sigma_l**2 + sigma_m**2)
     #
@@ -465,9 +482,14 @@ def _image_pixel_sum(image_l, image_m, mask_l, mask_m, sigma2_l, sigma2_m,
     if len(coord_arrays) == 0:
         raise ValueError("There has to be at least one pixel index.")
 
-    i = coord_arrays[0]**p[0]
-    for c, ip in zip(coord_arrays[1:], p[1:]):
-        i *= c**ip
+    if coord_pow is None:
+        i = coord_arrays[0]**p[0]
+        for c, ip in zip(coord_arrays[1:], p[1:]):
+            i *= c**ip
+    else:
+        i = np.array(coord_pow[0][p[0]])
+        for cp, ip in zip(coord_pow[1:], p[1:]):
+            i *= cp[ip]
 
     if cmask is not None:
         i = i[cmask]
@@ -476,7 +498,7 @@ def _image_pixel_sum(image_l, image_m, mask_l, mask_m, sigma2_l, sigma2_m,
 
 
 def _sigma_pixel_sum(mask_l, mask_m, sigma2_l, sigma2_m,
-                     coord_arrays=None, p=None, pp=None):
+                     coord_arrays=None, p=None, pp=None, coord_pow=None):
     # Compute sum of coord_arrays^(p+pp) ()/ (sigma_l**2 + sigma_m**2)
     #
     # If coord_arrays is None, replace it with 1 (this allows code
@@ -517,9 +539,14 @@ def _sigma_pixel_sum(mask_l, mask_m, sigma2_l, sigma2_m,
     if len(coord_arrays) == 0:
         raise ValueError("There has to be at least one pixel index.")
 
-    i = coord_arrays[0]**(p[0] + pp[0])
-    for c, ip, ipp in zip(coord_arrays[1:], p[1:], pp[1:]):
-        i *= c**(ip + ipp)
+    if coord_pow is None:
+        i = coord_arrays[0]**(p[0] + pp[0])
+        for c, ip, ipp in zip(coord_arrays[1:], p[1:], pp[1:]):
+            i *= c**(ip + ipp)
+    else:
+        i = np.array(coord_pow[0][p[0] + pp[0]])
+        for cp, ip, ipp in zip(coord_pow[1:], p[1:], pp[1:]):
+            i *= cp[ip + ipp]
 
     if cmask is not None:
         i = i[cmask]
