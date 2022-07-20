@@ -9,12 +9,15 @@ This module provides utility functions for use by :py:mod:`wiimatch` module.
 
 import numpy as np
 
+from .containers import WMInMemoryData
+
 
 __all__ = ['create_coordinate_arrays']
 
 
 def create_coordinate_arrays(image_shape, center=None, image2world=None,
-                             center_cs='image'):
+                             center_cs='image',
+                             container_cls=WMInMemoryData):
     """
     Create a list of coordinate arrays/grids for each dimension in the image
     shape. This function is similar to `numpy.indices` except it returns the

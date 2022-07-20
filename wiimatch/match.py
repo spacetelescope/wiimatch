@@ -10,6 +10,7 @@ N-dimensional image intensity data using (multivariate) polynomials.
 import numpy as np
 
 from .lsq_optimizer import build_lsq_eqs, pinv_solve, rlu_solve
+from .containers import WMData, WMInMemoryData, WMMappedData
 
 
 __all__ = ['match_lsq']
@@ -19,33 +20,52 @@ SUPPORTED_SOLVERS = ['RLU', 'PINV']
 
 def match_lsq(images, masks=None, sigmas=None, degree=0,
               center=None, image2world=None, center_cs='image',
-              ext_return=False, solver='RLU'):
-    r"""
+              ext_return=False, solver='RLU',
+              default_container=WMMappedData):
+    r"""match_lsq(images, masks=None, sigmas=None, degree=0, center=None,
+    image2world=None, center_cs='image', ext_return=False, solver='RLU',
+    default_container=WMInMemoryData)
+
     Compute coefficients of (multivariate) polynomials that once subtracted
     from input images would provide image intensity matching in the least
     squares sense.
 
     Parameters
     ----------
-    images : list of numpy.ndarray
-        A list of 1D, 2D, etc. `numpy.ndarray` data array whose "intensities"
-        must be "matched". All arrays must have identical shapes.
+    images : list of WMData and/or numpy.ndarray
+        A list of `~wiimatch.containers.WMData` to 1D, 2D, etc.
+        `numpy.ndarray` data arrays whose "intensities" must be "matched".
+        All arrays must have identical
+        shapes. When ``images`` is a list of `numpy.ndarray`, the container
+        class specified by the ``default_container`` will be used to convert
+        `numpy.ndarray` to `WMData` objects. Input list may mix `WMData`,
+        `numpy.ndarray`, and `None` objects.
 
-    masks : list of numpy.ndarray, None
-        A list of `numpy.ndarray` arrays of same length as ``images``.
-        Non-zero mask elements indicate valid data in the corresponding
-        ``images`` array. Mask arrays must have identical shape to that of
-        the arrays in input ``images``. Default value of `None` indicates that
-        all pixels in input images are valid.
+    masks : list of WMData and/or numpy.ndarray and/or None, None, optional
+        A list of `WMData` of the same length as ``images``.
+        Non-zero mask elements in data arrays indicate valid data in the
+        corresponding ``images`` array. Mask arrays must have identical shape
+        to that of the arrays in input ``images``. Default value of `None`
+        indicates that all pixels in (the corresponding) input images are valid.
+        When ``masks`` is a list of `numpy.ndarray`, the container class
+        specified by the ``default_container`` will be used to convert
+        `numpy.ndarray` to `WMData` objects. Input list may mix `WMData`,
+        `numpy.ndarray`, and `None` objects.
 
-    sigmas : list of numpy.ndarray, None
-        A list of `numpy.ndarray` data array of same length as ``images``
+    sigmas : list of WMData and/or numpy.ndarray and/or numbers, None, optional
+        A list of `WMData` of the same length as ``images``
         representing the uncertainties of the data in the corresponding array
         in ``images``. Uncertainty arrays must have identical shape to that of
-        the arrays in input ``images``. The default value of `None` indicates
-        that all pixels will be assigned equal weights.
+        the arrays in input ``images``. A numeric value for a ``sigmas``
+        element will apply to all pixels in the corresponding ``images``
+        element. The default value of `None` indicates
+        that all pixels will be assigned equal weights. When ``sigmas``
+        is a list of `numpy.ndarray`, the container class specified by the
+        ``default_container`` will be used to convert `numpy.ndarray` to
+        `WMData` objects. When ``sigmas`` is `None`, then all pixels
+        in all images will be assigned weight 1.
 
-    degree : iterable, int
+    degree : iterable, int, optional
         A list of polynomial degrees for each dimension of data arrays in
         ``images``. The length of the input list must match the dimensionality
         of the input images. When a single integer number is provided, it is
@@ -81,6 +101,11 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
 
     solver : {'RLU', 'PINV'}, optional
         Specifies method for solving the system of equations.
+
+    default_container : class
+        A class that is a subclass of `WMData` that will be used to
+        wrap input and internal `numpy.ndarray` arrays. Must be able to
+        instantiate from a single argument - a data aray.
 
     Returns
     -------
@@ -155,15 +180,16 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     Examples
     --------
     >>> import wiimatch
+    >>> from wiimatch.containers import WMInMemoryData
     >>> import numpy as np
     >>> im1 = np.zeros((5, 5, 4), dtype=float)
     >>> cbg = 1.32 * np.ones_like(im1)
     >>> ind = np.indices(im1.shape, dtype=float)
     >>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
-    >>> mask = np.ones_like(im1, dtype=np.int8)
-    >>> sigma = np.ones_like(im1, dtype=float)
-    >>> wiimatch.match.match_lsq([im1, im3], [mask, mask], [sigma, sigma],
-    ... degree=(1,1,1), center=(0,0,0))   # doctest: +FLOAT_CMP
+    >>> mask = WMInMemoryData(np.ones_like(im1, dtype=np.int8))
+    >>> sigma = WMInMemoryData(np.ones_like(im1, dtype=float))
+    >>> wiimatch.match.match_lsq([WMInMemoryData(im1), WMInMemoryData(im3)],
+    ... [mask, mask], [sigma, sigma], degree=(1,1,1), center=(0,0,0))  # doctest: +FLOAT_CMP
     array([[-6.60000000e-01, -7.50000000e-02, -3.10000000e-01,
             -6.96331881e-16, -3.70000000e-01, -1.02318154e-15,
             -5.96855898e-16,  2.98427949e-16],
@@ -181,6 +207,9 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
                                  '\'' + (',' if ns > 2 else '') +
                                  ' or \'{}'.format(SUPPORTED_SOLVERS[-1])))
 
+    images = [default_container(im) if isinstance(im, np.ndarray) else im
+              for im in images]
+
     # check that all images have the same shape:
     shapes = set([])
     for im in images:
@@ -193,38 +222,55 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
 
     # check that the number of good pixel mask arrays matches the numbers
     # of input images, and if 'masks' is None - set all of them to True:
-    if masks is None:
-        masks = [None for _ in images]
-
-    else:
+    if masks is not None:
         if len(masks) != nimages:
             raise ValueError("Length of masks list must match the length of "
                              "the image list.")
 
         for m in masks:
-            shapes.add(m.shape)
+            if m is not None:
+                shapes.add(m.shape)
         if len(shapes) > 1:
             raise ValueError("Shape of each mask array must match the shape "
                              "of input images.")
 
         # make a copy of the masks since we might modify these masks later
-        masks = [m.copy() for m in masks]
+        masks = [default_container(m.copy()) if isinstance(m, np.ndarray) else m
+                 for m in masks]
 
     # check that the number of sigma arrays matches the numbers
     # of input images, and if 'sigmas' is None - set all of them to 1:
-    if sigmas is None:
-        sigmas = [1.0 for _ in images]
+    if sigmas is not None:
+        nns = sum(int(s is None) for s in sigmas)
+        if nns > 0:
+            if nns != nimages:
+                raise ValueError("'sigmas' must be either None, or a list of "
+                                 "all None, or a list of all numpy.ndarray, "
+                                 "WMData, and/or numbers")
+            sigmas = None
 
-    else:
-        if len(sigmas) != nimages:
-            raise ValueError("Length of sigmas list must match the length of "
-                             "the image list.")
+        else:
+            if len(sigmas) != nimages:
+                raise ValueError("Length of sigmas list must match the length of "
+                                 "the image list.")
 
-        for s in sigmas:
-            shapes.add(s.shape)
-        if len(shapes) > 1:
-            raise ValueError("Shape of each sigma array must match the shape "
-                             "of input images.")
+            for s in sigmas:
+                if np.ndim(s):
+                    shapes.add(s.shape)
+            if len(shapes) > 1:
+                raise ValueError("Shape of each sigma array must match the shape "
+                                 "of input images.")
+
+            # make sure every element is a WMData:
+            new_sigmas = []
+            for s in sigmas:
+                if isinstance(s, WMData):
+                    new_sigmas.append(s)
+                elif isinstance(s, np.ndarray) and np.ndim(s):
+                    new_sigmas.append(default_container(s))
+                else:
+                    new_sigmas.append(WMInMemoryData(s))
+            sigmas = new_sigmas
 
     # check that 'degree' has the same length as the number of dimensions
     # in image arrays:
@@ -263,7 +309,7 @@ def match_lsq(images, masks=None, sigmas=None, degree=0,
     if solver == 'RLU':
         bkg_poly_coef = rlu_solve(a, b, nimages)
     else:
-        tol = np.finfo(images[0].dtype).eps**(2.0 / 3.0)
+        tol = np.finfo(images[0].data.dtype).eps**(2.0 / 3.0)
         bkg_poly_coef = pinv_solve(a, b, nimages, tol)
 
     if ext_return:

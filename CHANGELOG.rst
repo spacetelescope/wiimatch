@@ -7,8 +7,16 @@ Release Notes
 .. 0.2.2 (unreleased)
    ==================
 
-0.2.1 (unreleased)
-==================
+0.3.0 (20-July-2022)
+====================
+
+- Added data containers module and updated main code to support these containers
+  with the purpose of minimizing memory usage by writing/loading data
+  arrays to temporary files when needed. [#21]
+
+
+0.2.1 (08-July-2022)
+====================
 
 - Updated code to reduce warnings with latest ``numpy`` versions. [#16]
 

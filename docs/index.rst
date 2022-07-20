@@ -14,6 +14,7 @@ Content
    :maxdepth: 2
 
    source/match
+   source/containers
    source/lsq_optimizer
    source/utils
    source/LICENSE.rst

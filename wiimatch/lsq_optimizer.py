@@ -12,34 +12,52 @@ from numbers import Number
 import numpy as np
 
 from .utils import create_coordinate_arrays
+from .containers import WMInMemoryData
 
 
 __all__ = ['build_lsq_eqs', 'pinv_solve', 'rlu_solve']
 
 
 def build_lsq_eqs(images, masks, sigmas, degree, center=None,
-                  image2world=None, center_cs='image'):
-    r"""
+                  image2world=None, center_cs='image',
+                  container_cls=WMInMemoryData):
+    r"""build_lsq_eqs(images, masks, sigmas, degree, center=None,
+    image2world=None, center_cs='image',
+    container_cls=WMInMemoryData):
     Build system of linear equations whose solution would provide image
     intensity matching in the least squares sense.
 
     Parameters
     ----------
-    images : list of numpy.ndarray
-        A list of 1D, 2D, etc. `numpy.ndarray` data array whose "intensities"
-        must be "matched". All arrays must have identical shapes.
+    images : list of WMData
+        A list of `~wiimatch.containers.WMData` to 1D, 2D, etc.
+        `numpy.ndarray` data arrays whose "intensities" must be "matched".
+        All arrays must have identical
+        shapes. When ``images`` is a list of `numpy.ndarray`, the container
+        class specified by the ``default_container`` will be used to convert
+        `numpy.ndarray` to `WMData` objects. Input list may mix `WMData`,
+        `numpy.ndarray`, and `None` objects.
 
-    masks : list of numpy.ndarray
-        A list of `numpy.ndarray` arrays of same length as ``images``.
-        Non-zero mask elements indicate valid data in the corresponding
-        ``images`` array. Mask arrays must have identical shape to that of
-        the arrays in input ``images``.
+    masks : list of WMData and/or None
+        A list of `WMData` of the same length as ``images``.
+        Non-zero mask elements in data arrays indicate valid data in the
+        corresponding ``images`` array. Mask arrays must have identical shape
+        to that of the arrays in input ``images``. Default value of `None`
+        indicates that all pixels in (the corresponding) input images are valid.
+        When ``masks`` is a list of `numpy.ndarray`, the container class
+        specified by the ``default_container`` will be used to convert
+        `numpy.ndarray` to `WMData` objects. Input list may mix `WMData`,
+        `numpy.ndarray`, and `None` objects.
 
-    sigmas : list of numpy.ndarray
-        A list of `numpy.ndarray` data array of same length as ``images``
+    sigmas : list of WMData, list of None
+        A list of `WMData` of the same length as ``images``
         representing the uncertainties of the data in the corresponding array
         in ``images``. Uncertainty arrays must have identical shape to that of
-        the arrays in input ``images``.
+        the arrays in input ``images``. The default value of `None` indicates
+        that all pixels in all images will be assigned equal weights of 1. When
+        ``sigmas`` is a list of `numpy.ndarray`, the container class
+        specified by the ``default_container`` will be used to convert
+        `numpy.ndarray` to `WMData` objects.
 
     degree : iterable
         A list of polynomial degrees for each dimension of data arrays in
@@ -127,7 +145,8 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
 
     Examples
     --------
-    >>> import wiimatch
+    >>> from wiimatch.lsq_optimizer import build_lsq_eqs
+    >>> from wiimatch.containers import WMInMemoryData
     >>> import numpy as np
     >>> im1 = np.zeros((5, 5, 4), dtype=float)
     >>> cbg = 1.32 * np.ones_like(im1)
@@ -135,8 +154,12 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
     >>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
     >>> mask = np.ones_like(im1, dtype=np.int8)
     >>> sigma = np.ones_like(im1, dtype=float)
-    >>> a, b, ca, ef, cs = wiimatch.lsq_optimizer.build_lsq_eqs([im1, im3],
-    ... [mask, mask], [sigma, sigma], degree=(1, 1, 1), center=(0, 0, 0))
+    >>> a, b, ca, ef, cs = build_lsq_eqs(
+    ...     [WMInMemoryData(im1), WMInMemoryData(im3)],
+    ...     [WMInMemoryData(mask), WMInMemoryData(mask)],
+    ...     [WMInMemoryData(sigma), WMInMemoryData(sigma)],
+    ...     degree=(1, 1, 1), center=(0, 0, 0)
+    ... )
     >>> print(a)
     [[   50.   100.   100.   200.    75.   150.   150.   300.   -50.  -100.
        -100.  -200.   -75.  -150.  -150.  -300.]
@@ -190,23 +213,23 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
                                  "all None, or a list of all numpy.ndarray")
             sigmas2 = nimages * [None]
         else:
-            sigmas2 = [s**2 for s in sigmas]
+            sigmas2 = [s.data**2 for s in sigmas]
 
     # exclude pixels that have non-positive associated sigmas except the case
     # when all sigmas are non-positive
     if masks is None or masks[0] is None:
         if nns == 0:
-            masks = [(s > 0) for s in sigmas]
+            masks = [(s.data > 0) for s in sigmas]
         elif masks is None:
             masks = nimages * [None]
     elif nns == 0:
-        masks = [m & (s > 0) for m, s in zip(masks, sigmas)]
+        masks = [m.data if s is None else (m.data & (s.data > 0)) for m, s in zip(masks, sigmas)]
 
     # compute squares of sigmas for repeated use later
     if sigmas is None or sigmas[0] is None:
-        sigmas2 = nimages * [None]
+        sigmas2 = nimages * [1.0]
     else:
-        sigmas2 = [s**2 for s in sigmas]
+        sigmas2 = [s.data**2 for s in sigmas]
 
     degree1 = tuple([d + 1 for d in degree])
 
@@ -257,8 +280,8 @@ def build_lsq_eqs(images, masks, sigmas, degree, center=None,
 
             # compute array elements for m!=l:
             b[i] += _image_pixel_sum(
-                image_l=images[l],
-                image_m=images[m],
+                image_l=images[l].data,
+                image_m=images[m].data,
                 mask_l=masks[l],
                 mask_m=masks[m],
                 sigma2_l=sigmas2[l],
@@ -345,7 +368,8 @@ def pinv_solve(matrix, free_term, nimages, tol=None):
 
     Examples
     --------
-    >>> import wiimatch
+    >>> from wiimatch.lsq_optimizer import build_lsq_eqs, pinv_solve
+    >>> from wiimatch.containers import WMInMemoryData
     >>> import numpy as np
     >>> im1 = np.zeros((5, 5, 4), dtype=float)
     >>> cbg = 1.32 * np.ones_like(im1)
@@ -353,9 +377,13 @@ def pinv_solve(matrix, free_term, nimages, tol=None):
     >>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
     >>> mask = np.ones_like(im1, dtype=np.int8)
     >>> sigma = np.ones_like(im1, dtype=float)
-    >>> a, b, _, _, _ = wiimatch.lsq_optimizer.build_lsq_eqs([im1, im3],
-    ... [mask, mask], [sigma, sigma], degree=(1, 1, 1), center=(0, 0, 0))
-    >>> wiimatch.lsq_optimizer.pinv_solve(a, b, 2) # doctest: +FLOAT_CMP
+    >>> a, b, _, _, _ = build_lsq_eqs(
+    ...     [WMInMemoryData(im1), WMInMemoryData(im3)],
+    ...     [WMInMemoryData(mask), WMInMemoryData(mask)],
+    ...     [WMInMemoryData(sigma), WMInMemoryData(sigma)],
+    ...     degree=(1, 1, 1), center=(0, 0, 0)
+    ... )
+    >>> pinv_solve(a, b, 2) # doctest: +FLOAT_CMP
     array([[-6.60000000e-01, -7.50000000e-02, -3.10000000e-01,
             -4.44089210e-15, -3.70000000e-01, -7.66053887e-15,
              3.69704267e-14,  8.37108161e-14],
@@ -406,7 +434,8 @@ def rlu_solve(matrix, free_term, nimages):
 
     Examples
     --------
-    >>> import wiimatch
+    >>> from wiimatch.lsq_optimizer import build_lsq_eqs, pinv_solve
+    >>> from wiimatch.containers import WMInMemoryData
     >>> import numpy as np
     >>> im1 = np.zeros((5, 5, 4), dtype=float)
     >>> cbg = 1.32 * np.ones_like(im1)
@@ -414,9 +443,13 @@ def rlu_solve(matrix, free_term, nimages):
     >>> im3 = cbg + 0.15 * ind[0] + 0.62 * ind[1] + 0.74 * ind[2]
     >>> mask = np.ones_like(im1, dtype=np.int8)
     >>> sigma = np.ones_like(im1, dtype=float)
-    >>> a, b, _, _, _ = wiimatch.lsq_optimizer.build_lsq_eqs([im1, im3],
-    ... [mask, mask], [sigma, sigma], degree=(1, 1, 1), center=(0, 0, 0))
-    >>> wiimatch.lsq_optimizer.rlu_solve(a, b, 2)   # doctest: +FLOAT_CMP
+    >>> a, b, _, _, _ = build_lsq_eqs(
+    ...     [WMInMemoryData(im1), WMInMemoryData(im3)],
+    ...     [WMInMemoryData(mask), WMInMemoryData(mask)],
+    ...     [WMInMemoryData(sigma), WMInMemoryData(sigma)],
+    ...     degree=(1, 1, 1), center=(0, 0, 0)
+    ... )
+    >>> rlu_solve(a, b, 2)   # doctest: +FLOAT_CMP
     array([[-6.60000000e-01, -7.50000000e-02, -3.10000000e-01,
             -6.96331881e-16, -3.70000000e-01, -1.02318154e-15,
             -5.96855898e-16,  2.98427949e-16],
@@ -464,9 +497,9 @@ def _image_pixel_sum(image_l, image_m, mask_l, mask_m, sigma2_l, sigma2_m,
     if cmask is not None:
         image_l = image_l[cmask]
         image_m = image_m[cmask]
-        if not isinstance(sigma2_l, Number):
+        if not isinstance(sigma2_l, Number) and np.ndim(sigma2_l):
             sigma2_l = sigma2_l[cmask]
-        if not isinstance(sigma2_m, Number):
+        if not isinstance(sigma2_m, Number) and np.ndim(sigma2_m):
             sigma2_m = sigma2_m[cmask]
 
     if coord_arrays is None:
@@ -519,9 +552,9 @@ def _sigma_pixel_sum(mask_l, mask_m, sigma2_l, sigma2_m,
         cmask = mask_m
 
     if cmask is not None:
-        if not isinstance(sigma2_l, Number):
+        if not isinstance(sigma2_l, Number) and np.ndim(sigma2_l):
             sigma2_l = sigma2_l[cmask]
-        if not isinstance(sigma2_m, Number):
+        if not isinstance(sigma2_m, Number) and np.ndim(sigma2_m):
             sigma2_m = sigma2_m[cmask]
 
     if coord_arrays is None:
