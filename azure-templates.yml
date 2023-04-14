@@ -2,11 +2,11 @@ jobs:
 - job: ${{ format(parameters.name) }}
   pool:
     ${{ if eq(parameters.os, 'windows') }}:
-      vmImage: windows-2019
+      vmImage: windows-latest
     ${{ if eq(parameters.os, 'macos') }}:
-      vmImage: macOS-10.15
+      vmImage: macOS-latest
     ${{ if eq(parameters.os, 'linux') }}:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-latest
 
   strategy:
     matrix:
@@ -49,10 +49,20 @@ jobs:
       displayName: run test
 
     - bash: |
-        codecov -t $codecov_token
+        curl -Os https://uploader.codecov.io/latest/${{parameters.os}}/codecov
+        chmod +x codecov
+        ./codecov -t $codecov_token
       env:
         codecov_token: $(CODECOV_TOKEN)
-      displayName: codecov upload
+      condition: ne( variables['Agent.OS'], 'Windows_NT' )
+      displayName: codecov upload on Linux/Darwin
+
+    - powershell: |
+        $ProgressPreference = 'SilentlyContinue'
+        Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
+        .\codecov.exe -t ${CODECOV_TOKEN}
+      condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      displayName: codecov upload on Windows
 
     - task: PublishTestResults@2
       condition: succeededOrFailed()
