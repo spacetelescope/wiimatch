@@ -53,6 +53,8 @@ jobs:
       architecture: 'x64'
 
   - script: |
+      python -m pip install setuptools
+      python -m pip install setuptools_scm
       python -m pip install astropy
       python setup.py sdist
     displayName: 'Build sdist'
