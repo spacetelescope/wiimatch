@@ -91,7 +91,7 @@ setup(
     ],
     use_scm_version=True,
     setup_requires=SETUP_REQUIRES,
-    python_requires='>=3.5',
+    python_requires='>=3.7',
     install_requires=INSTALL_REQUIRES,
     tests_require=TESTS_REQUIRE,
     packages=find_packages(),
